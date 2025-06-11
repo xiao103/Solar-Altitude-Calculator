@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳高度角和阴影长度计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="number"], input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>太阳高度角和阴影长度计算器</h1>
+
+    <div class="container">
+        <div class="form-group">
+            <label for="latitude">纬度 (°):</label>
+            <input type="number" id="latitude" placeholder="请输入纬度" required>
+        </div>
+        <div class="form-group">
+            <label for="longitude">经度 (°):</label>
+            <input type="number" id="longitude" placeholder="请输入经度" required>
+        </div>
+        <div class="form-group">
+            <label for="timezone">时区 (例如：+8 或 -5):</label>
+            <input type="number" id="timezone" placeholder="请输入时区" required>
+        </div>
+        <div class="form-group">
+            <label for="datetime">日期和时间:</label>
+            <input type="datetime-local" id="datetime" required>
+        </div>
+        <div class="form-group">
+            <label for="height">物体高度 (毫米):</label>
+            <input type="number" id="height" placeholder="请输入物体高度 (毫米)" optional>
+        </div>
+
+        <button onclick="calculateSunAngle()">计算太阳高度角和阴影长度</button>
+
+        <table id="resultTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>整点</th>
+                    <th>太阳高度角 (°)</th>
+                    <th>阴影长度 (毫米)</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function calculateSunAngle() {
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            const timezone = parseFloat(document.getElementById('timezone').value);
+            const datetime = document.getElementById('datetime').value;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+
+            if (isNaN(latitude) || isNaN(longitude) || isNaN(timezone) || !datetime) {
+                alert("请输入有效的经纬度、时区和时间！");
+                return;
+            }
+
+            const date = new Date(datetime);
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+
+            const sunAngles = [];
+            const shadowLengths = [];
+
+            for (let i = 0; i < 24; i++) {
+                const angle = calculateSolarElevation(latitude, longitude, timezone, i, date);
+                sunAngles.push(angle);
+
+                if (height > 0) {
+                    const shadowLength = (height / Math.tan(angle * Math.PI / 180)) || 0;
+                    shadowLengths.push(shadowLength);
+                } else {
+                    shadowLengths.push(0);
+                }
+            }
+
+            displayResults(sunAngles, shadowLengths);
+        }
+
+        function calculateSolarElevation(lat, lon, tz, hour, date) {
+            // 在此简化计算太阳高度角的逻辑
+            // 请注意：实际应用中，需要根据更多的天文数据来计算太阳高度角
+            const solarDeclination = 23.44 * Math.sin((360 / 365) * (date.getDay() - 81) * Math.PI / 180); // 太阳赤纬角
+            const timeOffset = (hour + tz) * 15; // 根据时区计算的本地时间角度
+            const solarHourAngle = timeOffset - lon; // 太阳时角
+
+            const elevation = Math.asin(Math.sin(solarDeclination * Math.PI / 180) * Math.sin(lat * Math.PI / 180) + Math.cos(solarDeclination * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.cos(solarHourAngle * Math.PI / 180));
+            return elevation * 180 / Math.PI; // 返回太阳高度角
+        }
+
+        function displayResults(sunAngles, shadowLengths) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            sunAngles.forEach((angle, index) => {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.textContent = `${index}:00`;
+                const angleCell = document.createElement('td');
+                angleCell.textContent = angle.toFixed(2);
+                const shadowCell = document.createElement('td');
+                shadowCell.textContent = shadowLengths[index].toFixed(2);
+                
+                row.appendChild(timeCell);
+                row.appendChild(angleCell);
+                row.appendChild(shadowCell);
+                tableBody.appendChild(row);
+            });
+
+            document.getElementById('resultTable').style.display = 'table';
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳高度角与阴影长度计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            }
+            .bg-gradient-blue {
+                background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .solar-gradient {
+                background: linear-gradient(to right, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
+            }
+            .sunrise-gradient {
+                background: linear-gradient(to right, #ff5f6d, #ffc371);
+            }
+            .sunset-gradient {
+                background: linear-gradient(to right, #ff7e5f, #feb47b);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark min-h-screen flex flex-col">
+    <!-- 页面标题 -->
+    <header class="bg-gradient-blue text-white py-10 px-4 md:px-8">
+        <div class="container mx-auto text-center">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold mb-2">太阳高度角与阴影长度计算器</h1>
+            <p class="text-[clamp(1rem,2vw,1.25rem)] opacity-90">输入您的位置和时间信息，获取整点太阳高度角和阴影长度</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12 flex-grow">
+        <!-- 表单卡片 -->
+        <div class="bg-white rounded-xl card-shadow p-6 md:p-8 mb-8 transform transition-all hover:shadow-lg">
+            <h2 class="text-2xl font-bold mb-6 text-center text-dark">输入信息</h2>
+            
+            <form id="calculatorForm" class="space-y-6">
+                <!-- 位置信息 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="latitude" class="block text-sm font-medium text-gray-700">纬度 (°)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-map-marker text-gray-400"></i>
+                            </div>
+                            <input type="number" id="latitude" name="latitude" step="0.0001" 
+                                   placeholder="例如: 39.9042" required
+                                   class="pl-10 w-full rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        </div>
+                        <p class="text-xs text-gray-500">北纬为正值，南纬为负值</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="longitude" class="block text-sm font-medium text-gray-700">经度 (°)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-compass text-gray-400"></i>
+                            </div>
+                            <input type="number" id="longitude" name="longitude" step="0.0001" 
+                                   placeholder="例如: 116.4074" required
+                                   class="pl-10 w-full rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        </div>
+                        <p class="text-xs text-gray-500">东经为正值，西经为负值</p>
+                    </div>
+                </div>
+                
+                <!-- 时间信息 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="timezone" class="block text-sm font-medium text-gray-700">时区</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-clock-o text-gray-400"></i>
+                            </div>
+                            <select id="timezone" name="timezone" required
+                                    class="pl-10 w-full rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                                <option value="">请选择时区</option>
+                                <option value="-12">UTC-12</option>
+                                <option value="-11">UTC-11</option>
+                                <option value="-10">UTC-10</option>
+                                <option value="-9">UTC-9</option>
+                                <option value="-8">UTC-8</option>
+                                <option value="-7">UTC-7</option>
+                                <option value="-6">UTC-6</option>
+                                <option value="-5">UTC-5</option>
+                                <option value="-4">UTC-4</option>
+                                <option value="-3">UTC-3</option>
+                                <option value="-2">UTC-2</option>
+                                <option value="-1">UTC-1</option>
+                                <option value="0" selected>UTC±0</option>
+                                <option value="1">UTC+1</option>
+                                <option value="2">UTC+2</option>
+                                <option value="3">UTC+3</option>
+                                <option value="4">UTC+4</option>
+                                <option value="5">UTC+5</option>
+                                <option value="6">UTC+6</option>
+                                <option value="7">UTC+7</option>
+                                <option value="8">UTC+8</option>
+                                <option value="9">UTC+9</option>
+                                <option value="10">UTC+10</option>
+                                <option value="11">UTC+11</option>
+                                <option value="12">UTC+12</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="date" class="block text-sm font-medium text-gray-700">日期</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-calendar text-gray-400"></i>
+                            </div>
+                            <input type="date" id="date" name="date" required
+                                   class="pl-10 w-full rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 物体高度 -->
+                <div class="space-y-2">
+                    <label for="objectHeight" class="block text-sm font-medium text-gray-700">物体高度 (mm)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa fa-arrows-v text-gray-400"></i>
+                        </div>
+                        <input type="number" id="objectHeight" name="objectHeight" step="0.1" 
+                               placeholder="可选：输入物体高度以计算阴影长度"
+                               class="pl-10 w-full rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        <p class="text-xs text-gray-500">单位：毫米(mm)</p>
+                    </div>
+                </div>
+                
+                <!-- 计算按钮 -->
+                <div class="pt-2">
+                    <button type="submit" id="calculateBtn"
+                            class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fa fa-sun-o mr-2"></i>
+                        计算太阳高度角
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 结果展示 -->
+        <div id="resultsContainer" class="hidden">
+            <div class="bg-white rounded-xl card-shadow p-6 md:p-8 mb-8 transform transition-all hover:shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-center text-dark">计算结果</h2>
+                
+                <div class="overflow-x-auto">
+                    <table id="resultsTable" class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">太阳高度角 (°)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">阴影长度 (mm)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="resultsBody">
+                            <!-- 结果将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold mb-3">日出日落时间</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg sunrise-gradient text-white transform transition-all hover:scale-105">
+                            <div class="flex items-center">
+                                <i class="fa fa-sun-o text-white text-xl mr-3"></i>
+                                <div>
+                                    <p class="text-sm opacity-90">日出时间</p>
+                                    <p id="sunriseTime" class="text-lg font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg sunset-gradient text-white transform transition-all hover:scale-105">
+                            <div class="flex items-center">
+                                <i class="fa fa-moon-o text-white text-xl mr-3"></i>
+                                <div>
+                                    <p class="text-sm opacity-90">日落时间</p>
+                                    <p id="sunsetTime" class="text-lg font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 加载状态 -->
+        <div id="loadingContainer" class="hidden text-center py-12">
+            <div class="inline-flex h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">正在计算...</span>
+            </div>
+            <p class="mt-4 text-lg font-medium">正在计算太阳高度角...</p>
+        </div>
+        
+        <!-- 错误提示 -->
+        <div id="errorContainer" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-8 transform transition-all hover:scale-[1.01]">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-exclamation-triangle text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">计算出错</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p id="errorMessage"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <p class="text-sm opacity-80">太阳高度角与阴影长度计算器 &copy; 2023</p>
+                <p class="text-xs opacity-60 mt-2">本工具仅供参考，计算结果可能存在误差</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 太阳高度角计算函数
+        function calculateSolarElevation(latitude, longitude, timezone, date, hour) {
+            // 转换为弧度
+            const toRadians = (degrees) => degrees * Math.PI / 180;
+            const toDegrees = (radians) => radians * 180 / Math.PI;
+            
+            // 日期和时间处理
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 计算儒略日
+            const a = Math.floor((14 - month) / 12);
+            const y = year + 4800 - a;
+            const m = month + 12 * a - 3;
+            let jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+            
+            // 计算时角
+            const hourAngle = 15 * (hour - 12);
+            
+            // 计算太阳赤纬
+            const n = jdn - 2451545.0;
+            const L = 280.460 + 0.9856474 * n;
+            const g = 357.528 + 0.9856003 * n;
+            const lambda = L + 1.915 * Math.sin(toRadians(g)) + 0.020 * Math.sin(toRadians(2 * g));
+            const epsilon = 23.439 - 0.0000004 * n;
+            const delta = toDegrees(Math.asin(Math.sin(toRadians(epsilon)) * Math.sin(toRadians(lambda))));
+            
+            // 计算太阳高度角
+            const elevation = toDegrees(Math.asin(
+                Math.sin(toRadians(latitude)) * Math.sin(toRadians(delta)) +
+                Math.cos(toRadians(latitude)) * Math.cos(toRadians(delta)) * Math.cos(toRadians(hourAngle))
+            ));
+            
+            return elevation;
+        }
+        
+        // 计算日出日落时间
+        function calculateSunriseSunset(latitude, longitude, timezone, date) {
+            // 转换为弧度
+            const toRadians = (degrees) => degrees * Math.PI / 180;
+            const toDegrees = (radians) => radians * 180 / Math.PI;
+            
+            // 日期处理
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 计算儒略日
+            const a = Math.floor((14 - month) / 12);
+            const y = year + 4800 - a;
+            const m = month + 12 * a - 3;
+            const jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+            
+            // 计算太阳赤纬
+            const n = jdn - 2451545.0;
+            const L = 280.460 + 0.9856474 * n;
+            const g = 357.528 + 0.9856003 * n;
+            const lambda = L + 1.915 * Math.sin(toRadians(g)) + 0.020 * Math.sin(toRadians(2 * g));
+            const epsilon = 23.439 - 0.0000004 * n;
+            const delta = toDegrees(Math.asin(Math.sin(toRadians(epsilon)) * Math.sin(toRadians(lambda))));
+            
+            // 计算日出日落时间
+            const omega0 = toDegrees(Math.acos(
+                -Math.tan(toRadians(latitude)) * Math.tan(toRadians(delta))
+            ));
+            
+            // 计算日出时间 (UTC)
+            let sunriseHour = 12 - omega0 / 15;
+            // 转换为本地时间
+            sunriseHour = (sunriseHour + timezone + 24) % 24;
+            
+            // 计算日落时间 (UTC)
+            let sunsetHour = 12 + omega0 / 15;
+            // 转换为本地时间
+            sunsetHour = (sunsetHour + timezone + 24) % 24;
+            
+            // 格式化时间
+            const formatTime = (hour) => {
+                const h = Math.floor(hour);
+                const m = Math.round((hour - h) * 60);
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            };
+            
+            return {
+                sunrise: formatTime(sunriseHour),
+                sunset: formatTime(sunsetHour)
+            };
+        }
+        
+        // 计算阴影长度
+        function calculateShadowLength(elevation, objectHeight) {
+            if (elevation <= 0) {
+                return "太阳在地平线以下";
+            }
+            
+            const elevationRadians = elevation * Math.PI / 180;
+            const shadowLength = objectHeight / Math.tan(elevationRadians);
+            
+            return shadowLength.toFixed(2);
+        }
+        
+        // 处理表单提交
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 显示加载状态，隐藏其他容器
+            document.getElementById('loadingContainer').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('errorContainer').classList.add('hidden');
+            
+            // 获取表单数据
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            const timezone = parseInt(document.getElementById('timezone').value);
+            const dateStr = document.getElementById('date').value;
+            const objectHeight = document.getElementById('objectHeight').value 
+                ? parseFloat(document.getElementById('objectHeight').value) 
+                : null;
+            
+            // 验证输入
+            if (isNaN(latitude) || isNaN(longitude) || isNaN(timezone) || !dateStr) {
+                document.getElementById('loadingContainer').classList.add('hidden');
+                document.getElementById('errorMessage').textContent = '请输入有效的经纬度、时区和日期';
+                document.getElementById('errorContainer').classList.remove('hidden');
+                return;
+            }
+            
+            if (latitude < -90 || latitude > 90) {
+                document.getElementById('loadingContainer').classList.add('hidden');
+                document.getElementById('errorMessage').textContent = '纬度必须在-90到90之间';
+                document.getElementById('errorContainer').classList.remove('hidden');
+                return;
+            }
+            
+            if (longitude < -180 || longitude > 180) {
+                document.getElementById('loadingContainer').classList.add('hidden');
+                document.getElementById('errorMessage').textContent = '经度必须在-180到180之间';
+                document.getElementById('errorContainer').classList.remove('hidden');
+                return;
+            }
+            
+            if (objectHeight !== null && objectHeight <= 0) {
+                document.getElementById('loadingContainer').classList.add('hidden');
+                document.getElementById('errorMessage').textContent = '物体高度必须大于0';
+                document.getElementById('errorContainer').classList.remove('hidden');
+                return;
+            }
+            
+            // 处理日期
+            const date = new Date(dateStr);
+            
+            // 计算日出日落时间
+            const { sunrise, sunset } = calculateSunriseSunset(latitude, longitude, timezone, date);
+            
+            // 计算24小时的太阳高度角
+            const results = [];
+            for (let hour = 0; hour < 24; hour++) {
+                const elevation = calculateSolarElevation(latitude, longitude, timezone, date, hour);
+                let shadowLength = null;
+                
+                if (objectHeight !== null) {
+                    shadowLength = calculateShadowLength(elevation, objectHeight);
+                }
+                
+                results.push({
+                    hour,
+                    elevation: elevation.toFixed(2),
+                    shadowLength
+                });
+            }
+            
+            // 填充结果表格
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+            
+            results.forEach(result => {
+                const row = document.createElement('tr');
+                
+                // 根据太阳高度角设置不同的背景色
+                const elevationValue = parseFloat(result.elevation);
+                if (elevationValue > 45) {
+                    row.className = 'bg-blue-50 hover:bg-blue-100';
+                } else if (elevationValue > 0) {
+                    row.className = 'bg-blue-50/50 hover:bg-blue-50';
+                } else {
+                    row.className = 'bg-gray-100/50 hover:bg-gray-100';
+                }
+                
+                // 时间单元格
+                const timeCell = document.createElement('td');
+                timeCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
+                timeCell.textContent = `${result.hour.toString().padStart(2, '0')}:00`;
+                row.appendChild(timeCell);
+                
+                // 太阳高度角单元格
+                const elevationCell = document.createElement('td');
+                elevationCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
+                elevationCell.textContent = result.elevation;
+                
+                // 根据高度角设置颜色
+                if (elevationValue > 0) {
+                    // 白天，高度角为正
+                    elevationCell.classList.add('text-green-600');
+                } else {
+                    // 夜晚，高度角为负
+                    elevationCell.classList.add('text-gray-500');
+                }
+                row.appendChild(elevationCell);
+                
+                // 阴影长度单元格
+                const shadowCell = document.createElement('td');
+                shadowCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
+                
+                if (result.shadowLength !== null) {
+                    if (result.shadowLength === "太阳在地平线以下") {
+                        shadowCell.textContent = result.shadowLength;
+                        shadowCell.classList.add('text-gray-500');
+                    } else {
+                        shadowCell.textContent = result.shadowLength;
+                        shadowCell.classList.add('text-blue-600');
+                    }
+                } else {
+                    shadowCell.textContent = '未提供物体高度';
+                    shadowCell.classList.add('text-gray-400');
+                }
+                row.appendChild(shadowCell);
+                
+                resultsBody.appendChild(row);
+            });
+            
+            // 显示日出日落时间
+            document.getElementById('sunriseTime').textContent = sunrise;
+            document.getElementById('sunsetTime').textContent = sunset;
+            
+            // 隐藏加载状态，显示结果
+            document.getElementById('loadingContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            
+            // 滚动到结果区域
+            document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // 设置默认日期为今天
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+        });
+        
+        // 添加按钮悬停效果
+        document.getElementById('calculateBtn').addEventListener('mouseenter', function() {
+            this.classList.add('shadow-lg', 'shadow-primary/20');
+        });
+        
+        document.getElementById('calculateBtn').addEventListener('mouseleave', function() {
+            this.classList.remove('shadow-lg', 'shadow-primary/20');
+        });
+        
+        // 添加表单元素的动画效果
+        const formInputs = document.querySelectorAll('input, select');
+        formInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('scale-[1.01]');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('scale-[1.01]');
+            });
+        });
+    </script>
+</body>
+</html>
