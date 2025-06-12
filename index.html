@@ -1,204 +1,362 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太阳高度角与阴影长度计算器</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js"></script>
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 960px;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-        }
-        .card {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 0.5rem;
-        }
-        .card-header {
-            background-color: #0d6efd;
-            color: white;
-            font-weight: bold;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-        .form-label {
-            font-weight: 500;
-        }
-        #resultsTable th {
-            position: sticky;
-            top: 0;
-            background-color: #e9ecef;
-        }
-        footer {
-            margin-top: 2rem;
-            text-align: center;
-            color: #6c757d;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>太阳高度角与阴影长度计算器</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/1.0.0/svg2pdf.min.js"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      max-width: 960px;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 0.5rem;
+    }
+    .card-header {
+      background-color: #0d6efd;
+      color: white;
+      font-weight: bold;
+      border-top-left-radius: 0.5rem;
+      border-top-right-radius: 0.5rem;
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    #shadowCanvas {
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+    .export-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .hemisphere-info {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #dc3545;
+    }
+    footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: #6c757d;
+    }
+    #svgContainer {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="card">
-        <h5 class="card-header text-center py-3">
-            ☀️ 太阳高度角与阴影长度计算器
-        </h5>
-        <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-6 col-lg-3">
-                    <label for="latitude" class="form-label">纬度 (°)</label>
-                    <input type="number" class="form-control" id="latitude" value="25.03" step="0.01">
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <label for="longitude" class="form-label">经度 (°)</label>
-                    <input type="number" class="form-control" id="longitude" value="121.56" step="0.01">
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <label for="objectHeight" class="form-label">物体高度 (mm)</label>
-                    <input type="number" class="form-control" id="objectHeight" placeholder="可选" min="0">
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <label for="date" class="form-label">日期</label>
-                    <input type="date" class="form-control" id="date">
-                </div>
-                <div class="col-12">
-                    <label for="timezone" class="form-label">时区</label>
-                    <select class="form-select" id="timezone"></select>
-                </div>
-            </div>
+  <div class="card">
+    <h5 class="card-header text-center py-3">☀️ 太阳高度角与阴影长度计算器</h5>
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-3">
+          <label for="latitude" class="form-label">纬度 (°)</label>
+          <input type="number" class="form-control" id="latitude" value="25.03" step="0.01">
+          <small class="form-text text-muted">正数为北纬，负数为南纬</small>
         </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="longitude" class="form-label">经度 (°)</label>
+          <input type="number" class="form-control" id="longitude" value="121.56" step="0.01">
+          <small class="form-text text-muted">正数为东经，负数为西经</small>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="objectHeight" class="form-label">物体高度 (mm)</label>
+          <input type="number" class="form-control" id="objectHeight" value="20" min="0">
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="date" class="form-label">日期</label>
+          <input type="date" class="form-control" id="date">
+        </div>
+        <div class="col-12">
+          <label for="timezone" class="form-label">时区</label>
+          <select class="form-select" id="timezone">
+            <option value="-12">UTC-12:00 (夸贾林环礁)</option>
+            <option value="-11">UTC-11:00 (中途岛)</option>
+            <option value="-10">UTC-10:00 (檀香山)</option>
+            <option value="-9">UTC-09:00 (安克雷奇)</option>
+            <option value="-8">UTC-08:00 (洛杉矶)</option>
+            <option value="-7">UTC-07:00 (丹佛)</option>
+            <option value="-6">UTC-06:00 (芝加哥)</option>
+            <option value="-5">UTC-05:00 (纽约)</option>
+            <option value="-4">UTC-04:00 (圣地亚哥)</option>
+            <option value="-3">UTC-03:00 (里约热内卢)</option>
+            <option value="-2">UTC-02:00 (圣保罗)</option>
+            <option value="-1">UTC-01:00 (亚速尔群岛)</option>
+            <option value="0">UTC±00:00 (伦敦)</option>
+            <option value="1">UTC+01:00 (柏林)</option>
+            <option value="2">UTC+02:00 (开罗)</option>
+            <option value="3">UTC+03:00 (莫斯科)</option>
+            <option value="4">UTC+04:00 (迪拜)</option>
+            <option value="5">UTC+05:00 (卡拉奇)</option>
+            <option value="6">UTC+06:00 (达卡)</option>
+            <option value="7">UTC+07:00 (曼谷)</option>
+            <option value="8" selected>UTC+08:00 (北京)</option>
+            <option value="9">UTC+09:00 (东京)</option>
+            <option value="10">UTC+10:00 (悉尼)</option>
+            <option value="11">UTC+11:00 (马加丹)</option>
+            <option value="12">UTC+12:00 (奥克兰)</option>
+            <option value="13">UTC+13:00 (努库阿洛法)</option>
+            <option value="14">UTC+14:00 (基里巴斯)</option>
+          </select>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="card mt-4">
-        <h5 class="card-header text-center py-3">
-            📊 计算结果
-        </h5>
-        <div class="card-body">
-            <table class="table table-striped table-hover text-center" id="resultsTable">
-                <thead>
-                    <tr>
-                        <th scope="col">时间 (所选时区)</th>
-                        <th scope="col">太阳高度角 (°)</th>
-                        <th scope="col">阴影长度 (mm)</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody"></tbody>
-            </table>
-        </div>
+  <div class="card mt-4">
+    <h5 class="card-header text-center py-3">📊 计算结果</h5>
+    <div class="card-body">
+      <table class="table table-striped table-hover text-center" id="resultsTable">
+        <thead>
+          <tr>
+            <th scope="col">时间</th>
+            <th scope="col">太阳高度角 (°)</th>
+            <th scope="col">阴影长度 (mm)</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
     </div>
+  </div>
+
+  <div class="card mt-4">
+    <h5 class="card-header text-center py-3">📐 阴影方向图示 (仅20cm以内)</h5>
+    <div class="card-body text-center">
+      <div id="hemisphereDisplay" class="hemisphere-info"></div>
+      <canvas id="shadowCanvas" width="400" height="400"></canvas>
+      <div class="export-buttons">
+        <button id="exportSVG" class="btn btn-success">导出SVG</button>
+      </div>
+    </div>
+  </div>
 </div>
-
 <footer>
-    <p>&copy; 2025 生本教具（浙江）有限公司. All rights reserved.</p>
+  <p>&copy; 2025 AI Powered Calculator</p>
 </footer>
 
+<!-- 隐藏的SVG容器用于导出 -->
+<div id="svgContainer"></div>
+
 <script>
-    const latitudeInput = document.getElementById('latitude');
-    const longitudeInput = document.getElementById('longitude');
-    const dateInput = document.getElementById('date');
-    const timezoneSelect = document.getElementById('timezone');
-    const objectHeightInput = document.getElementById('objectHeight');
-    const resultsBody = document.getElementById('resultsBody');
+const latitudeInput = document.getElementById('latitude');
+const longitudeInput = document.getElementById('longitude');
+const dateInput = document.getElementById('date');
+const timezoneSelect = document.getElementById('timezone');
+const objectHeightInput = document.getElementById('objectHeight');
+const resultsBody = document.getElementById('resultsBody');
+const canvas = document.getElementById('shadowCanvas');
+const ctx = canvas.getContext('2d');
+const exportSVG = document.getElementById('exportSVG');
+const exportPDF = document.getElementById('exportPDF');
+const svgContainer = document.getElementById('svgContainer');
+const hemisphereDisplay = document.getElementById('hemisphereDisplay');
 
-    const timezones = [
-        { offset: -12, text: "UTC-12 | 国际日期变更线西" },
-        { offset: -11, text: "UTC-11 | 纽埃" },
-        { offset: -10, text: "UTC-10 | 夏威夷" },
-        { offset: -9, text: "UTC-9 | 阿拉斯加" },
-        { offset: -8, text: "UTC-8 | 洛杉矶" },
-        { offset: -7, text: "UTC-7 | 丹佛" },
-        { offset: -6, text: "UTC-6 | 芝加哥" },
-        { offset: -5, text: "UTC-5 | 纽约" },
-        { offset: -4, text: "UTC-4 | 哈利法克斯" },
-        { offset: -3, text: "UTC-3 | 巴西利亚" },
-        { offset: -2, text: "UTC-2 | 南乔治亚" },
-        { offset: -1, text: "UTC-1 | 亚速尔群岛" },
-        { offset: 0, text: "UTC+0 | 伦敦" },
-        { offset: 1, text: "UTC+1 | 柏林" },
-        { offset: 2, text: "UTC+2 | 开罗" },
-        { offset: 3, text: "UTC+3 | 莫斯科" },
-        { offset: 4, text: "UTC+4 | 迪拜" },
-        { offset: 5, text: "UTC+5 | 卡拉奇" },
-        { offset: 5.5, text: "UTC+5:30 | 新德里" },
-        { offset: 6, text: "UTC+6 | 达卡" },
-        { offset: 7, text: "UTC+7 | 曼谷" },
-        { offset: 8, text: "UTC+8 | 北京" },
-        { offset: 9, text: "UTC+9 | 东京" },
-        { offset: 10, text: "UTC+10 | 悉尼" },
-        { offset: 11, text: "UTC+11 | 所罗门群岛" },
-        { offset: 12, text: "UTC+12 | 奥克兰" }
-    ];
+// 存储最后计算的阴影数据
+let lastShadowData = [];
+let currentHemisphere = '';
 
-    function initialize() {
-        timezones.forEach(tz => {
-            const option = document.createElement('option');
-            option.value = tz.offset;
-            option.textContent = tz.text;
-            timezoneSelect.appendChild(option);
-        });
-        timezoneSelect.value = "8";
+// 初始化日期
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  dateInput.value = today.toISOString().split('T')[0];
+  [latitudeInput, longitudeInput, dateInput, timezoneSelect, objectHeightInput]
+    .forEach(input => input.addEventListener('input', calculateAndDisplay));
+  calculateAndDisplay();
+  
+  // 添加导出事件监听
+  exportSVG.addEventListener('click', exportAsSVG);
+  exportPDF.addEventListener('click', exportAsPDF);
+});
 
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        dateInput.value = `${yyyy}-${mm}-${dd}`;
+function calculateAndDisplay() {
+  const lat = parseFloat(latitudeInput.value);
+  const lon = parseFloat(longitudeInput.value);
+  const dateStr = dateInput.value;
+  const tzOffset = parseFloat(timezoneSelect.value);
+  const height = parseFloat(objectHeightInput.value);
 
-        [latitudeInput, longitudeInput, dateInput, timezoneSelect, objectHeightInput].forEach(input => {
-            input.addEventListener('input', calculateAndDisplay);
-        });
+  // 确定当前半球
+  currentHemisphere = lat >= 0 ? '北半球' : '南半球';
+  hemisphereDisplay.textContent = `当前位置: ${currentHemisphere} (${lat > 0 ? '北纬' : '南纬'}${Math.abs(lat).toFixed(2)}°)`;
+  
+  if (isNaN(lat) || isNaN(lon) || isNaN(height) || height <= 0 || !dateStr) {
+    resultsBody.innerHTML = '<tr><td colspan="3">请输入有效的经纬度、日期与物体高度</td></tr>';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    lastShadowData = [];
+    return;
+  }
 
-        calculateAndDisplay();
+  const [year, month, day] = dateStr.split('-').map(Number);
+  resultsBody.innerHTML = '';
+  lastShadowData = [];
+
+  for (let hour = 0; hour < 24; hour++) {
+    const utcTime = Date.UTC(year, month - 1, day, hour) - tzOffset * 3600 * 1000;
+    const dateObj = new Date(utcTime);
+    const sun = SunCalc.getPosition(dateObj, lat, lon);
+    const alt = sun.altitude;
+    const az = sun.azimuth;
+
+    const altDeg = (alt * 180 / Math.PI).toFixed(2);
+    let shadow = '—';
+    let shadowValue = null;
+
+    if (alt > 0) {
+      shadowValue = height / Math.tan(alt);
+      shadow = shadowValue.toFixed(2);
+    } else {
+      shadow = '无穷长';
     }
 
-    function calculateAndDisplay() {
-        const lat = parseFloat(latitudeInput.value);
-        const lon = parseFloat(longitudeInput.value);
-        const dateStr = dateInput.value;
-        const tzOffset = parseFloat(timezoneSelect.value);
-        const objectHeight = parseFloat(objectHeightInput.value);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${hour}:00</td><td>${altDeg}</td><td>${shadow}</td>`;
+    resultsBody.appendChild(tr);
 
-        if (isNaN(lat) || isNaN(lon) || !dateStr) {
-            resultsBody.innerHTML = `<tr><td colspan=\"3\" class=\"text-danger\">请输入有效的经纬度和日期.</td></tr>`;
-            return;
-        }
-
-        resultsBody.innerHTML = '';
-        const [year, month, day] = dateStr.split('-').map(Number);
-
-        for (let hour = 0; hour < 24; hour++) {
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, 0, 0) - (tzOffset * 3600 * 1000);
-            const calculationDate = new Date(utcTimestamp);
-            const sunPosition = SunCalc.getPosition(calculationDate, lat, lon);
-            const altitudeRad = sunPosition.altitude;
-            const altitudeDeg = altitudeRad * 180 / Math.PI;
-
-            let shadowLength = '—';
-            if (!isNaN(objectHeight) && objectHeight > 0) {
-                shadowLength = altitudeRad > 0
-                    ? (objectHeight / Math.tan(altitudeRad)).toFixed(2)
-                    : '无穷长';
-            }
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${String(hour).padStart(2, '0')}:00</td>
-                <td>${altitudeDeg.toFixed(2)} °</td>
-                <td>${shadowLength}</td>
-            `;
-            resultsBody.appendChild(row);
-        }
+    if (shadowValue !== null && shadowValue <= 200) {
+      lastShadowData.push({ hour, azimuth: az, length: shadowValue });
     }
+  }
 
-    document.addEventListener('DOMContentLoaded', initialize);
+  drawShadowCanvas(lastShadowData, lat);
+}
+
+// 绘制以北为上，影子从中心向 azimuth 方向延伸的图示
+function drawShadowCanvas(data, latitude) {
+  const width = canvas.width;
+  const height = canvas.height;
+  const cx = width / 2;
+  const cy = height / 2;
+  const scale = 1.5; // 1像素 = 1.5mm
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Draw circle & center point
+  ctx.strokeStyle = '#999';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 180, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  data.forEach(({ azimuth, length }) => {
+    // 修正角度，让北方朝上
+    const angle = azimuth + Math.PI / 2;
+    const x = cx + length * scale * Math.cos(angle);
+    const y = cy - length * scale * Math.sin(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+}
+
+// 生成SVG内容
+function generateSVGContent(data, latitude) {
+  const width = 400;
+  const height = 400;
+  const cx = width / 2;
+  const cy = height / 2;
+  const scale = 1.5;
+  
+  let svgContent = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="100%" height="100%" fill="white"/>
+  <circle cx="${cx}" cy="${cy}" r="180" stroke="#999" fill="none"/>
+  <circle cx="${cx}" cy="${cy}" r="3" fill="black"/>
+  <text x="${cx - 6}" y="${cy - 180 + 15}" font-family="sans-serif" font-size="14" fill="#333">北</text>
+  `;
+  
+  // 添加南半球标识
+  if (latitude < 0) {
+    svgContent += `
+  <text x="${cx}" y="${cy + 180 - 15}" font-family="sans-serif" font-size="12" fill="#dc3545" text-anchor="middle">南半球模式</text>`;
+  }
+  
+  // 添加阴影线
+  data.forEach(({ azimuth, length }) => {
+    let angle;
+    
+    // 南半球需要反转方位角
+    if (latitude < 0) {
+      angle = azimuth + Math.PI; // 南半球反转方向
+    } else {
+      angle = azimuth + Math.PI; // 北半球正常计算
+    }
+    
+    const x = cx + Math.sin(angle) * length / scale;
+    const y = cy - Math.cos(angle) * length / scale;
+    
+    svgContent += `
+  <line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#0d6efd" stroke-width="1"/>`;
+  });
+  
+  svgContent += `
+</svg>`;
+  
+  return svgContent;
+}
+
+// 导出为SVG
+function exportAsSVG() {
+  if (lastShadowData.length === 0) {
+    alert('请先进行计算并生成阴影图');
+    return;
+  }
+  
+  const lat = parseFloat(latitudeInput.value);
+  const svgContent = generateSVGContent(lastShadowData, lat);
+  const blob = new Blob([svgContent], {type: 'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `太阳阴影图_${currentHemisphere}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 导出为PDF
+// 移除导出PDF按钮相关代码
+// 移除PDF导出相关事件监听
+// exportPDF.removeEventListener('click', exportAsPDF);
+
+// 移除 exportAsPDF 函数
+// function exportAsPDF() {
+//   const svgElement = document.querySelector('#svgContainer svg');
+//   const pdf = new jsPDF('landscape');
+//   const svgWidth = svgElement.width.baseVal.value;
+//   const svgHeight = svgElement.height.baseVal.value;
+//   const pdfWidth = pdf.internal.pageSize.getWidth();
+//   const pdfHeight = pdf.internal.pageSize.getHeight();
+//   const scale = Math.min(pdfWidth / svgWidth, pdfHeight / svgHeight);
+// 
+//   svg2pdf(svgElement, pdf, { xOffset: 0, yOffset: 0, scale: scale }).then(() => {
+//     const hemisphereText = currentHemisphere === 'north' ? '北半球' : '南半球';
+//     pdf.save(`太阳阴影图_${hemisphereText}.pdf`);
+//   });
+// }
 </script>
-
 </body>
 </html>
